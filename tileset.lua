@@ -4,7 +4,7 @@ function Tileset:new(image, tileLayer)
     local tileset = {
         tiles = {}
     }
-    tileset.spritebatch = love.graphics.newSpriteBatch(image, 1000)
+    tileset.spritebatch = love.graphics.newSpriteBatch(image, 5000)
     
     local tileData = tileLayer.data
     for i = 1, #tileData, 1 do
@@ -13,9 +13,6 @@ function Tileset:new(image, tileLayer)
             local x = ((i - 1) % tileLayer.width) * 16
             local y = math.floor((i - 1) / tileLayer.width) * 16
             local qcoords = getTileCoords(tile, image)
-            print("Tile IDX: "..tile)
-            print("Screen coords: "..x..", "..y)
-            print("Quad coords: "..qcoords.x..", "..qcoords.y)
             local quad = love.graphics.newQuad(qcoords.x, qcoords.y, 16, 16, image:getWidth(), image:getHeight())
             table.insert(tileset.tiles, tileset.spritebatch:add(quad, x, y))
         end

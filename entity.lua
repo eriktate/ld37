@@ -1,4 +1,5 @@
 require("util")
+require("Vector2")
 
 Entity = {}
 
@@ -14,8 +15,6 @@ function Entity:new(pos, width, height, solid)
             height = height,
         },
         gravity = 0,
-        hspeed = 0,
-        vspeed = 0,
         solid = solid,
         airborn = false,
         collidables = {},
@@ -65,6 +64,32 @@ function Entity:checkCollision(pos)
     return false
 end
 
+-- Returns the horizontal motion vector based on the current normal vector.
+function Entity:motionVector()
+    local vector = self:normal()
+    vector.x = -vector.y
+    vector.y = x
+end
+
+-- Returns the opposite of the normal vector.
+function Entity:groundVector()
+    return self:normal():reverse()
+end
+
+-- Returns the normal vector with respect to the orientation.
+function Entity:normal()
+    if orientation = 90 then
+        return {x = 0, y = -1}
+    elseif orientation = 180 then
+        return {x = -1, y = 0}
+    elseif orientation = 270 then
+        return {x = 0, y = 1}
+    elseif orientation = 0 then
+        return {x = 1, y = 0}
+    end
+    return {x = 0, y = -1}
+end
+
 function Entity:addAnimation(name, frames)
     self.animation:add(name, frames)
 end
@@ -75,32 +100,31 @@ end
 
 function Entity:update(dt)
     self.animation:update(dt)
-    if self:checkCollision({x = self.pos.x, y = self.pos.y + 1}) then
+    if self:checkCollision(self.pos + self:groundVector()) then
         self.airborn = false
     else
         self.airborn = true
     end
 
     if self.airborn then
-        self.vspeed = self.vspeed + (self.gravity * dt)
+        self.speed = self.speed + (self.gravity * dt)
     end
 
-    local newY = self.pos.y + (self.vspeed * dt)
-    if self:checkCollision({x = self.pos.x, y = newY}) then
-        for i = 0, math.ceil(self.vspeed * dt) + 1, 1 do
-            newY = math.floor(self.pos.y) + (i * util.sign(self.vspeed))
-            if self:checkCollision({x = self.pos.x, y = newY}) then
-                newY = newY - util.sign(self.vspeed)
+    local mag = self.speed * dt
+    if self:checkCollision(self.pos + self:groundVector():scale(mag)) then
+        for i = 0, math.ceil(mag) + 1, 1 do
+            if self:checkCollision(self.pos + self:groundVector():scale(mag)) then
+                mag = i -1
                 break
             else
-                self.pos.y = newY
+                mag = i
             end
         end
 
-        self.vspeed = 0
+        self.speed = 0
     end
 
-    self.pos.y = newY
+    self.pos = self.pos + self:groundVector():scale(mag)
 end
 
 function checkOverlap(box1, box2)

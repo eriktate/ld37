@@ -9,6 +9,8 @@ WatchList = {
     things = {}
 }
 
+orientation = 90
+
 function WatchList:watch(key, value)
     self.things[key] = value
 end
@@ -18,24 +20,24 @@ function love.load()
     camera = Camera:new(0, 0, 1, 1, 0)
     entityList = Level.getWalls()
     tiles = Level.getTiles()
-    player = Player:new({x = 200, y = 100}, 16, 16, 100, love.graphics.newImage("assets/player.png"))
+    player = Player:new({x = 200, y = 300}, 16, 16, 100, love.graphics.newImage("assets/player.png"))
     player.collidables = entityList
-    love.window.setMode(640, 480, { vsync = false })
+    love.window.setMode(640, 640, { vsync = false })
 end
 
 function love.draw()
     local counter = 0
     --camera:set()
-    for k, v in pairs(WatchList.things) do
-        love.graphics.print(k..": "..v, 0, counter * 16)
-        counter = counter + 1
-    end
     player:draw()
     for i, entity in ipairs(entityList) do
         entity:draw()
     end
     for i, tile in ipairs(tiles) do
         tile:draw()
+    end
+    for k, v in pairs(WatchList.things) do
+        love.graphics.print(k..": "..v, 0, counter * 16)
+        counter = counter + 1
     end
     --camera:unset()
 end
