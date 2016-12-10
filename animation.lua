@@ -2,10 +2,12 @@ Animation = {}
 
 function Animation:new(width, height, frameRate, image)
     local anim = {
-        x = x,
-        y = y,
+        x = 0,
+        y = 0,
         width = width,
         height = height,
+        xscale = 1,
+        yscale = 1,
         frameRate = frameRate,
         frames = {},
         spriteBatch = love.graphics.newSpriteBatch(image, 1),
@@ -21,11 +23,9 @@ function Animation:new(width, height, frameRate, image)
 
     for i=0, rows - 1, 1 do
         for j=0, columns - 1, 1 do
-            print("Quad: "..j*width..", "..i*height)
             local quad = love.graphics.newQuad(j * width, i * height, width, height, imgWidth, imgHeight)
             if self.spriteID == nil then
-                print("DOING STUFF")
-                self.spriteID = anim.spriteBatch:add(quad, 0, 0)
+                self.spriteID = anim.spriteBatch:add(quad, 0, 0, 0, self.xscale, self.yscale)
             end
             anim.frames[counter] = quad
             counter = counter + 1
@@ -40,8 +40,10 @@ function Animation:add(name, frames)
 end
 
 function Animation:set(name)
-    self.currentAnimation = name
-    self.currentFrame = 1
+    if name ~= self.currentAnimation then
+        self.currentAnimation = name
+        self.currentFrame = 1
+    end
 end
 
 function Animation:update(dt)
@@ -52,7 +54,15 @@ function Animation:update(dt)
     end
     local frameNumber = anim[math.floor(self.currentFrame)]
     local quad = self.frames[frameNumber]
-    self.spriteBatch:set(self.spriteID, quad, self.x, self.y)
+    local x = self.x
+    local y = self.y
+    if self.xscale < 0 then
+        x = x + self.width
+    end
+    if self.yscale < 0 then
+        y = y + self.height
+    end
+    self.spriteBatch:set(self.spriteID, quad, x, y, 0, self.xscale, self.yscale)
 end
 
 return Animation
