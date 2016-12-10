@@ -1,0 +1,9 @@
+One room
+- 4 regions
+    - Plains
+    - Tundra
+    - Desert
+    - Dark
+- Access to all regions from beginning.
+- Have to do things in non-linear style to progress.
+- End goal is flip the world right side out and see the stars.
