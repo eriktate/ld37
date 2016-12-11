@@ -26,10 +26,24 @@ function Level.getTiles()
         local layer = Level.layers[i]
         if layer.type == "tilelayer" then
             local image = nil
+            local firstGid = 1
             if layer.name == "Grass" then
                 image = love.graphics.newImage("assets/grassTiles.png")
             end
-            tilesets[counter] = Tileset:new(image, layer)
+            if layer.name == "Desert" then
+                image = love.graphics.newImage("assets/desert.png")
+                firstGid = 26
+            end
+            if layer.name == "Tundra" then
+                image = love.graphics.newImage("assets/tundra.png")
+                firstGid = 51
+            end
+            if layer.name == "Dark" then
+                image = love.graphics.newImage("assets/grassdark.png")
+                firstGid = 76
+            end
+            tilesets[counter] = Tileset:new(image, layer, firstGid)
+            counter = counter + 1
         end
     end
     return tilesets

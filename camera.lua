@@ -53,10 +53,10 @@ function Camera:setScale(sx, sy)
 end
 
 function Camera:update(dt, follow)
-    self.rotation = util.degtorad(orientation - 90)
-    local x = follow.pos.x - (640 / 2 * self.scaleX)
-    local y = follow.pos.y - (640 / 2 * self.scaleY)
+    local x = math.floor(follow.pos.x - (640 / 2 * self.scaleX))
+    local y = math.floor(follow.pos.y - (640 / 2 * self.scaleY))
     self:setPosition(x, y)
 end
+
 
 return Camera

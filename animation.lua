@@ -2,7 +2,7 @@ require("util")
 
 Animation = {}
 
-function Animation:new(width, height, frameRate, image)
+function Animation:new(width, height, frameRate, image, static)
     local anim = {
         x = 0,
         y = 0,
@@ -10,14 +10,18 @@ function Animation:new(width, height, frameRate, image)
         originY = 0,
         width = width,
         height = height,
+        initialRot = 0,
         flip = 1,
+        static = false,
+        originalFrameRate = frameRate,
         frameRate = frameRate,
         frames = {},
         spriteBatch = love.graphics.newSpriteBatch(image),
         spriteID = nil,
         currentFrame = 1,
         currentAnimation = "",
-        animations = {}
+        animations = {},
+        done = function()end
     }
     local imgWidth, imgHeight = image:getDimensions()
     local columns = imgWidth/width
@@ -39,6 +43,20 @@ function Animation:new(width, height, frameRate, image)
     return setmetatable(anim, self)
 end
 
+function Animation:stop()
+    self.frameRate = 0
+end
+
+function Animation:play(killCallback)
+    if killCallback then
+        self:clearCallback()
+    end
+    self.frameRate = self.originalFrameRate
+end
+
+function Animation:clearCallback()
+    self.done = function()end
+end
 function Animation:add(name, frames)
     self.animations[name] = frames
 end
@@ -57,14 +75,22 @@ end
 
 -- An Animation's update function needs the delta time and its normal vector.
 function Animation:update(dt)
-    self.currentFrame = self.currentFrame + (self.frameRate * dt)
     local anim = self.animations[self.currentAnimation]
-    if self.currentFrame > #anim + 1 then
-        self.currentFrame = 1
-    end
+
     local frameNumber = anim[math.floor(self.currentFrame)]
     local quad = self.frames[frameNumber]
-    self.spriteBatch:set(self.spriteID, quad, self.x, self.y, util.degtorad(orientation + 270), self.flip, 1, self.width/2, self.height/2)    
+    local rot = util.degtorad(orientation + 270)
+    if self.static then
+        rot = util.degtorad(self.initialRot)
+    end
+    self.spriteBatch:set(self.spriteID, quad, self.x, self.y, rot, self.flip, 1, self.width/2, self.height/2)
+
+    -- Moved this down here to stop flicker when changing anims during done callback
+    self.currentFrame = self.currentFrame + (self.frameRate * dt)
+    if self.currentFrame > #anim + 1 then
+        self.currentFrame = 1
+        self.done()
+    end    
 end
 
 return Animation

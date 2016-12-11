@@ -21,6 +21,7 @@ function Entity:new(pos, width, height, solid)
         gravity = 0,
         speed = 0,
         solid = solid,
+        lock = false,
         airborn = false,
         collidables = {},
         devices = {},
@@ -34,6 +35,11 @@ function Entity:draw()
     if self.animation then
         love.graphics.draw(self.animation.spriteBatch, self.pos.x, self.pos.y)
     end
+    local x = self.pos.x + self.bbox.x
+    local y = self.pos.y + self.bbox.y
+    love.graphics.setColor(0, 255, 0)
+    love.graphics.rectangle("line", x, y, self.bbox.width, self.bbox.height)
+    love.graphics.setColor(255, 255, 255)
 end
 
 function Entity:setBbox(x, y, width, height)
@@ -56,15 +62,26 @@ function Entity:setOrigin(x, y)
     end
 end
 
+function Entity:setAnimationCallback(callback)
+    self.animation.done = callback
+end
+
+function Entity:checkSide(entity)
+    if self.pos.x + self.width/2 > entity.pos.x + entity.width/2 then
+        return "left"
+    else
+        return "right"
+    end
+end
 -- Checks for collisions with solid objects in the collidable list.
-function Entity:checkCollision(pos)
+function Entity:checkCollision(pos, entities)
     local bbox = {
         left = pos.x + self.bbox.x,
         top = pos.y + self.bbox.y,
         right = pos.x + self.bbox.x + self.bbox.width,
         bottom = pos.y + self.bbox.y + self.bbox.height
     }
-    for i, collidable in pairs(self.collidables) do
+    for i, collidable in pairs(entities) do
         if collidable.solid then
             local colBox = {
                 left = collidable.pos.x + collidable.bbox.x,
@@ -72,13 +89,13 @@ function Entity:checkCollision(pos)
                 right = collidable.pos.x + collidable.bbox.y + collidable.bbox.width,
                 bottom = collidable.pos.y + collidable.bbox.y + collidable.bbox.height
             }
-
+            
             if checkOverlap(bbox, colBox) then
-                return true
+                return collidable
             end
         end
     end
-    return false
+    return nil
 end
 
 function Entity:adjustBbox()
@@ -117,6 +134,12 @@ function Entity:normal()
     return Vector2:new(0, -1)
 end
 
+function Entity:newAnimation(width, height, frameRate, image)
+    local animation = Animation:new(width, height, frameRate, image)
+    self.animation = animation
+    self.animation.static = self.solid
+end
+
 function Entity:addAnimation(name, frames)
     self.animation:add(name, frames)
 end
@@ -127,12 +150,12 @@ end
 
 function Entity:update(dt)
     self.animation:update(dt)
-    if solid then
+    if self.solid or self.lock then
         return
     end
     self:adjustBbox()
     
-    if self:checkCollision(self.pos + self:groundVector()) then
+    if self:checkCollision(self.pos + self:groundVector(), self.collidables) then
         self.airborn = false
     else
         self.airborn = true
@@ -143,10 +166,12 @@ function Entity:update(dt)
     end
 
     local mag = self.speed * dt
+    WatchList:watch("Mag", mag)
+    WatchList:watch("Ground vector", self:groundVector().x..self:groundVector().y)
     local moveVec = self.pos + self:groundVector():scale(mag)
-    if self:checkCollision(self.pos + self:groundVector():scale(mag)) then
-        for i = 0, math.ceil(mag) + 1, 1 do
-            if self:checkCollision(Vector2.floor(self.pos) + self:groundVector():scale(i)) then
+    if self:checkCollision(self.pos + self:groundVector():scale(mag), self.collidables) then
+        for i = -1, math.ceil(mag) + 1, 1 do
+            if self:checkCollision(Vector2.floor(self.pos) + self:groundVector():scale(i), self.collidables) then
                 moveVec = Vector2.floor(self.pos) + self:groundVector():scale(i - 1)
                 break
             end
@@ -154,10 +179,10 @@ function Entity:update(dt)
 
         self.speed = 0
     end
+    WatchList:watch("MoveVec", moveVec.x..", "..moveVec.y)
     self.pos = moveVec
 end
 
-function checkDevice()
 function checkOverlap(box1, box2)
     local xOverlap = false
     local yOverlap = false
@@ -165,7 +190,7 @@ function checkOverlap(box1, box2)
         xOverlap = true
     end
 
-    if ((box1.top >= box2.top) and (box1.top <= box2.bottom)) or ((box1.bottom <= box2.bottom) and (box1.bottom > box2.top)) then
+    if ((box1.top >= box2.top) and (box1.top <= box2.bottom)) or ((box1.bottom <= box2.bottom) and (box1.bottom >= box2.top)) then
         yOverlap = true
     end
     

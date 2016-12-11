@@ -14,7 +14,7 @@ function Vector2.__add(vec1, vec2)
     return Vector2:new(vec1.x + vec2.x, vec1.y + vec2.y)
 end
 
-function Vector2.__subtract(vec1, vec2)
+function Vector2.__sub(vec1, vec2)
     return Vector2:new(vec1.x - vec2.x, vec1.y - vec2.y)
 end
 
