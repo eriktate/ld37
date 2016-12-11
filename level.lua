@@ -11,7 +11,7 @@ function Level.getWalls()
         if layer.type == "objectgroup" then
             for j = 1, #layer.objects, 1 do
                 local object = layer.objects[j]
-                walls[counter] = Entity:new({x = object.x, y = object.y}, object.width, object.height, true)
+                walls[counter] = Entity:new(Vector2:new(object.x, object.y), object.width, object.height, true)
                 counter = counter + 1
             end
         end

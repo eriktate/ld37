@@ -1,3 +1,5 @@
+require("util")
+
 Camera = {}
 
 function Camera:new(x, y, scaleX, scaleY, rotation)
@@ -14,7 +16,9 @@ end
 
 function Camera:set()
     love.graphics.push()
+    love.graphics.translate(640/2, 640/2)
     love.graphics.rotate(-self.rotation)
+    love.graphics.translate(-640/2, -640/2)
     love.graphics.scale(1 / self.scaleX, 1 / self.scaleY)
     love.graphics.translate(-self.x, -self.y)
 end
@@ -46,6 +50,13 @@ end
 function Camera:setScale(sx, sy)
     self.scaleX = sx or self.scaleX
     self.scaleY = sy or self.scaleY
+end
+
+function Camera:update(dt, follow)
+    self.rotation = util.degtorad(orientation - 90)
+    local x = follow.pos.x - (640 / 2 * self.scaleX)
+    local y = follow.pos.y - (640 / 2 * self.scaleY)
+    self:setPosition(x, y)
 end
 
 return Camera
