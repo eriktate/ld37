@@ -1,10 +1,12 @@
-require("Entity")
-require("Animation")
+require("entity")
+require("animation")
 
 Lever = {}
 
-function Lever:new(pos, action, deaction)
+function Lever:new(pos, action, deaction, locked)
     local lever =  setmetatable({}, {__index = Entity:new(pos, 16, 16, true)})
+    lever.type = "lever"
+    lever.locked = locked
     lever.active = false
     lever.action = action or function()end
     lever.deaction = deaction or function()end
@@ -18,7 +20,12 @@ function Lever:new(pos, action, deaction)
     lever:addAnimation("winIdle", {5})
     lever:addAnimation("winActivate", {6, 5, 4})
     lever:addAnimation("winDeactivate", {4, 5, 6})
-    lever:setAnimation("deactivated")
+    lever:addAnimation("locked", {9})
+    if lever.locked then
+        lever:setAnimation("locked")
+    else
+        lever:setAnimation("deactivated")
+    end
     
     function lever:activate()
         self:setAnimation("activate")
@@ -29,6 +36,29 @@ function Lever:new(pos, action, deaction)
             self.active = true
             self.action()
         end)
+    end
+
+    function lever:unlock()
+        if self.locked then
+            self.locked = false
+            self:setAnimation("deactivated")
+        end
+    end
+
+    function lever:lock()
+        if not self.locked then
+            self.locked = true
+            self:setAnimation("locked")
+        end
+    end
+    
+    function lever:setAnimation(anim)
+        print("hit")
+        if self.locked then
+            Entity.setAnimation(self, "locked")
+        else
+            Entity.setAnimation(self, anim)
+        end
     end
 
     function lever:deactivate(callback)

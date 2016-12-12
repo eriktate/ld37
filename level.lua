@@ -1,7 +1,7 @@
-require("Entity")
-require("Tileset")
+require("entity")
+require("tileset")
 
-Level = require("levels/objectTest")
+Level = require("levels/TiltedGrass")
 
 function Level.getWalls()
     local walls = {}

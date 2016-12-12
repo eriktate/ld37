@@ -8,8 +8,18 @@ util.degtorad = function(deg)
     return deg * (math.pi/180)
 end
 
-util.floor = function(vec)
-    return 
+util.concat = function(table1, table2)
+    local concat = {}
+
+    for i = 1, #table1, 1 do
+        concat[i] = table1[i]
+    end
+
+    for i = 1, #table2, 1 do
+        concat[#table1+i] = table2[i]
+    end
+
+    return concat
 end
 
 return util

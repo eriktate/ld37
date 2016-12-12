@@ -1,5 +1,5 @@
 require("util")
-require("Vector2")
+require("vector2")
 
 Entity = {}
 
@@ -10,6 +10,7 @@ function Entity:new(pos, width, height, solid)
         originY = 0,
         width = width,
         height = height,
+        pushable = false,
         bbox = {
             x = 0,
             y = 0,
@@ -35,11 +36,11 @@ function Entity:draw()
     if self.animation then
         love.graphics.draw(self.animation.spriteBatch, self.pos.x, self.pos.y)
     end
-    local x = self.pos.x + self.bbox.x
-    local y = self.pos.y + self.bbox.y
-    love.graphics.setColor(0, 255, 0)
-    love.graphics.rectangle("line", x, y, self.bbox.width, self.bbox.height)
-    love.graphics.setColor(255, 255, 255)
+    -- local x = self.pos.x + self.bbox.x
+    -- local y = self.pos.y + self.bbox.y
+    -- love.graphics.setColor(0, 255, 0)
+    -- love.graphics.rectangle("line", x, y, self.bbox.width, self.bbox.height)
+    -- love.graphics.setColor(255, 255, 255)
 end
 
 function Entity:setBbox(x, y, width, height)
@@ -82,17 +83,18 @@ function Entity:checkCollision(pos, entities)
         bottom = pos.y + self.bbox.y + self.bbox.height
     }
     for i, collidable in pairs(entities) do
-        if collidable.solid then
-            local colBox = {
-                left = collidable.pos.x + collidable.bbox.x,
-                top = collidable.pos.y + collidable.bbox.y,
-                right = collidable.pos.x + collidable.bbox.y + collidable.bbox.width,
-                bottom = collidable.pos.y + collidable.bbox.y + collidable.bbox.height
-            }
-            
-            if checkOverlap(bbox, colBox) then
-                return collidable
-            end
+        if collidable == self then
+            break
+        end
+        local colBox = {
+            left = collidable.pos.x + collidable.bbox.x,
+            top = collidable.pos.y + collidable.bbox.y,
+            right = collidable.pos.x + collidable.bbox.y + collidable.bbox.width,
+            bottom = collidable.pos.y + collidable.bbox.y + collidable.bbox.height
+        }
+        
+        if checkOverlap(bbox, colBox) then
+            return collidable
         end
     end
     return nil
@@ -149,7 +151,10 @@ function Entity:setAnimation(name)
 end
 
 function Entity:update(dt)
-    self.animation:update(dt)
+    if self.animation then
+        self.animation:update(dt)
+    end
+
     if self.solid or self.lock then
         return
     end
@@ -166,26 +171,26 @@ function Entity:update(dt)
     end
 
     local mag = self.speed * dt
-    WatchList:watch("Mag", mag)
-    WatchList:watch("Ground vector", self:groundVector().x..self:groundVector().y)
     local moveVec = self.pos + self:groundVector():scale(mag)
-    if self:checkCollision(self.pos + self:groundVector():scale(mag), self.collidables) then
-        for i = -1, math.ceil(mag) + 1, 1 do
-            if self:checkCollision(Vector2.floor(self.pos) + self:groundVector():scale(i), self.collidables) then
-                moveVec = Vector2.floor(self.pos) + self:groundVector():scale(i - 1)
+    if self:checkCollision(moveVec, self.collidables) then
+        local magSign = util.sign(mag)
+        for i = -1, math.abs(math.ceil(mag)) + 1, 1 do
+            local flooredY = Vector2:new(self.pos.x, math.floor(self.pos.y))
+            if self:checkCollision(flooredY + self:groundVector():scale(i * magSign), self.collidables) then
+                moveVec = flooredY + self:groundVector():scale((i - 1) * magSign)
                 break
             end
         end
 
         self.speed = 0
     end
-    WatchList:watch("MoveVec", moveVec.x..", "..moveVec.y)
     self.pos = moveVec
 end
 
 function checkOverlap(box1, box2)
     local xOverlap = false
     local yOverlap = false
+
     if ((box1.left >= box2.left) and (box1.left <= box2.right)) or ((box1.right <= box2.right) and (box1.right >= box2.left)) then
         xOverlap = true
     end
@@ -194,6 +199,8 @@ function checkOverlap(box1, box2)
         yOverlap = true
     end
     
+    WatchList:watch("XOverlap", tostring(xOverlap))
+    WatchList:watch("YOverlap", tostring(yOverlap))
     return (xOverlap and yOverlap)
 end
 

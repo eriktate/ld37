@@ -6,6 +6,9 @@ function Camera:new(x, y, scaleX, scaleY, rotation)
     local camera = {
         x = x,
         y = y,
+        drawX = x,
+        drawY = y,
+        shake = false,
         scaleX = scaleX,
         scaleY = scaleY,
         rotation = rotation
@@ -52,9 +55,18 @@ function Camera:setScale(sx, sy)
     self.scaleY = sy or self.scaleY
 end
 
+function Camera:setShake(shake)
+    self.shake = shake
+end
+
 function Camera:update(dt, follow)
-    local x = math.floor(follow.pos.x - (640 / 2 * self.scaleX))
-    local y = math.floor(follow.pos.y - (640 / 2 * self.scaleY))
+    local x = follow.pos.x - (640 / 2 * self.scaleX)
+    local y = follow.pos.y - (640 / 2 * self.scaleY)
+
+    if self.shake then
+        x = x - 5 + (math.random() * 10)
+        y = y - 5 + (math.random() * 10)
+    end
     self:setPosition(x, y)
 end
 

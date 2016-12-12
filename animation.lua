@@ -57,6 +57,7 @@ end
 function Animation:clearCallback()
     self.done = function()end
 end
+
 function Animation:add(name, frames)
     self.animations[name] = frames
 end
@@ -71,6 +72,11 @@ function Animation:set(name)
         self.currentAnimation = name
         self.currentFrame = 1
     end
+end
+
+function Animation:animationFrame()
+    local anim = self.animations[self.currentAnimation]
+    return anim[math.floor(self.currentFrame)]
 end
 
 -- An Animation's update function needs the delta time and its normal vector.

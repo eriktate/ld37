@@ -1,5 +1,5 @@
-require("Entity")
-require("Animation")
+require("entity")
+require("animation")
 Player = {}
 
 function Player:new(pos, width, height, speed, image)
@@ -8,11 +8,16 @@ function Player:new(pos, width, height, speed, image)
     player.moveSpeed = speed
     player.image = image
     player.gravity = 200
-    player.jumpHeight = 100
+    player.jumpHeight = 120
+    player.flip = -1
     player.jumping = false
     player.devices = {}
 
-    player:setBbox(-player.originX, -player.originY, width, height)
+    player.stepSnd = love.audio.newSource("assets/sfx/character/ground.wav")
+    player.jumpSnd = love.audio.newSource("assets/sfx/character/jump.wav")
+    player.lastFrame = 0
+
+    player:setBbox(-player.originX + 2, -player.originY, width - 3, height - 2)
     player:newAnimation(width, height, 10, image)
     player:addAnimation("idle", {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2})
     player:addAnimation("run", {5, 6, 7, 8})
@@ -34,6 +39,7 @@ function Player:update(dt)
             if not self.airborn then
                 self.speed = -self.jumpHeight
                 self.jumping = true
+                love.audio.play(self.jumpSnd)
             end
         end
 
@@ -41,9 +47,7 @@ function Player:update(dt)
             self.jumping = false
         end
         
-        if love.keyboard.isDown("space") then
-            self:pull()
-        elseif love.keyboard.isDown("d") then
+        if love.keyboard.isDown("d") then
             self:moveRight(dt)
             self.animation.flip = 1
             self:setAnimation(self:airbornState() or "run")
@@ -54,7 +58,14 @@ function Player:update(dt)
         else
             self:setAnimation(self:airbornState() or "idle")
         end
+        
+        if love.keyboard.isDown("space") then
+            self:pull()
+        end
     end
+
+    self:pressButton()
+    self:playStep()
 
     Entity.update(self, dt)
 end
@@ -70,23 +81,45 @@ function Player:airbornState()
 end
 
 function Player:moveRight(dt)
-    local moveVec = self.pos + self:moveVector():scale(self.moveSpeed * dt)
-    if not self:checkCollision(moveVec, self.collidables) then
-        self.pos = moveVec
+    local mag = self.moveSpeed * dt
+    local moveVec = self.pos + self:moveVector():scale(mag)
+    collided = self:checkCollision(moveVec, self.collidables)
+    if collided then
+        if collided.pushable and not collided.locked then
+            if collided:checkCollision(collided.pos + collided:moveVector():scale(mag), collided.collidables) then
+                return
+            end
+            collided.pos = collided.pos + collided:moveVector():scale(mag)
+        else
+            return
+        end
     end
+
+    self.pos = moveVec
 end
 
 function Player:moveLeft(dt)
-    local moveVec = self.pos - self:moveVector():scale(self.moveSpeed * dt)
-    if not self:checkCollision(moveVec, self.collidables) then
-        self.pos = moveVec
+    local mag = self.moveSpeed * dt
+    local moveVec = self.pos - self:moveVector():scale(mag)
+    collided = self:checkCollision(moveVec, self.collidables)
+    if collided then
+        if collided.pushable and not collided.locked then
+            if collided:checkCollision(collided.pos - collided:moveVector():scale(mag), collided.collidables) then
+                return
+            end
+            collided.pos = collided.pos - collided:moveVector():scale(mag)
+        else
+            return
+        end
     end
+    
+    self.pos = moveVec
 end
 
 function Player:pull()
-    self.lock = true
     device = self:checkDevice()
-    if device then
+    if device and not device.locked then
+        self.lock = true
         side = self:checkSide(device)
         self:setAnimation("pull")
         self:setAnimationCallback(function()
@@ -95,10 +128,10 @@ function Player:pull()
         end)
         self.pos = device.pos
         if device.active then
-            print("deactivating")
+            self.flip = -1
             device:deactivate()
         else
-            print("activating")
+            self.flip = 1
             device:activate()
         end
     end 
@@ -106,6 +139,22 @@ end
 
 function Player:checkDevice()
     return self:checkCollision(self.pos, self.devices)
+end
+
+function Player:pressButton()
+    local device = self:checkDevice()
+    
+    if device and device.type == "button" then
+        device:press()
+    end
+end
+
+function Player:playStep()
+    local frame = self.animation:animationFrame()
+    if frame ~= self.lastFrame and (frame == 6 or frame == 8) then
+        love.audio.play(self.stepSnd)
+    end
+    self.lastFrame = frame
 end
 
 return Player
